@@ -1,4 +1,5 @@
-Map<String, Map<String, List<String>>> zonasCodigosPostales = {
+// lib\utils\barrios_codigos_postales.dart
+Map<String, Map<String, List<String>>> barriosCodigosPostales = {
   "Montevideo": {
     "ABAYUBA": ["12400"],
     "AGUADA": ["11800"],

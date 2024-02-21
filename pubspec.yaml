@@ -45,6 +45,7 @@ dependencies:
   permission_handler: ^11.2.0
   http: ^0.13.3
   google_place: ^0.4.7
+  path_provider: ^2.1.2
 
 dev_dependencies:
   flutter_test:

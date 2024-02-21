@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../controllers/location_controller.dart';
+import '../services/location_file_manager.dart'; // Importa el archivo de gestión de ubicación
+import '../utils/file_utils.dart'; // Importa el archivo de utilidades para archivos
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key}) : super(key: key);
@@ -35,6 +37,20 @@ class _MyHomePageState extends State<MyHomePage> {
                   _initialCameraPosition = position.position;
                   _isLocationLoaded = true;
                 });
+
+                // Subir la ubicación a Firestore
+                await _locationController.uploadCurrentLocationToFirestore();
+
+                // Guardar la ubicación en un archivo JSON local
+                await LocationFileManager.saveLocationToJson({
+                  'address': _currentAddress,
+                  'latitude': _initialCameraPosition.latitude,
+                  'longitude': _initialCameraPosition.longitude,
+                });
+
+                // Obtener el directorio de documentos de la aplicación y mostrarlo en la consola
+                final directoryPath = await FileUtils.getApplicationDocumentsDirectoryPath();
+                print('Directorio de documentos de la aplicación: $directoryPath');
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(

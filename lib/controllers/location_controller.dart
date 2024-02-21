@@ -1,18 +1,55 @@
+// lib/controllers/location_controller.dart
+
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart'; // Importa LatLng desde google_maps_flutter
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../models/location.dart' as MyLocation;
 import '../services/location_service.dart';
-import '../utils/zonas_codigos_postales.dart';
+import '../services/firebase_service.dart'; // Importa el servicio de Firestore
+import '../utils/barrios_codigos_postales.dart';
 
 class LocationController {
   final LocationService _locationService = LocationService();
+  final FirestoreService _firestoreService = FirestoreService(); // Instancia del servicio de Firestore
 
+  // Métodos para obtener la ubicación y cargarla a Firestore
   Future<MyLocation.Location> getCurrentLocation() async {
     final Position position = await _locationService.getCurrentPosition();
     final String address = await _getCurrentAddress(position);
     // Utiliza LatLng para crear la posición
     return MyLocation.Location(address: address, position: LatLng(position.latitude, position.longitude));
+  }
+
+  Future<void> uploadCurrentLocationToFirestore() async {
+    try {
+      var position = await getCurrentLocation();
+      String currentAddress = position.address;
+
+      // Luego, carga esta dirección en Firestore
+      await _firestoreService.uploadData(
+        {'address': currentAddress},
+        'ubicaciones',
+        'ubicacion_actual',
+      );
+    } catch (e) {
+      print('Error al subir la ubicación a Firestore: $e');
+    }
+  }
+
+  Future<void> updateCurrentLocationInFirestore() async {
+    try {
+      var position = await getCurrentLocation();
+      String newAddress = position.address;
+
+      // Actualizar la dirección en Firestore
+      await _firestoreService.updateData(
+        {'address': newAddress},
+        'ubicaciones',
+        'ubicacion_actual',
+      );
+    } catch (e) {
+      print('Error al actualizar la ubicación en Firestore: $e');
+    }
   }
 
   Future<String> _getCurrentAddress(Position position) async {
@@ -33,7 +70,7 @@ class LocationController {
 
       List<String> zones = postalCode.isNotEmpty ? _mapPostalCodeToZone(postalCode) : ["Desconocida"];
 
-      return "$address\nZonas: ${zones.join(", ")}";
+      return "$address\nBarrios: ${zones.join(", ")}";
     } catch (e) {
       return "No se pudo obtener la dirección: $e";
     }
@@ -41,7 +78,7 @@ class LocationController {
 
   List<String> _mapPostalCodeToZone(String postalCode) {
     List<String> foundZones = [];
-    for (var departamento in zonasCodigosPostales.values) {
+    for (var departamento in barriosCodigosPostales.values) {
       for (var codigos in departamento.values) {
         if (codigos.contains(postalCode)) {
           var zona = departamento.keys.firstWhere((key) => departamento[key] == codigos);
